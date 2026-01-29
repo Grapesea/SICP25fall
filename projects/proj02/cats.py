@@ -30,7 +30,11 @@ def choose(paragraphs, select, k):
     ''
     """
     # BEGIN PROBLEM 1
-    "*** YOUR CODE HERE ***"
+    list = []
+    for word in paragraphs:
+        if select(word):
+            list.append(word)
+    return '' if k >= len(list) else list[k]
     # END PROBLEM 1
 
 
@@ -49,7 +53,21 @@ def about(topic):
     """
     assert all([lower(x) == x for x in topic]), "topics should be lowercase."
     # BEGIN PROBLEM 2
-    "*** YOUR CODE HERE ***"
+    def wash(word):
+        res = ''
+        for i in word:
+            if (i >= 'a' and i <= 'z') or (i >= 'A' and i <= 'Z'):
+                res += i.lower()
+        return res
+    
+    def judge(sentence):
+        word_list = sentence.split(' ')
+        for w in word_list:
+            if wash(w) in topic:
+                return True
+        return False
+    
+    return judge
     # END PROBLEM 2
 
 
@@ -79,7 +97,18 @@ def accuracy(typed, source):
     typed_words = split(typed)
     source_words = split(source)
     # BEGIN PROBLEM 3
-    "*** YOUR CODE HERE ***"
+    if typed == '' and source == '':
+        return 100.0
+    if typed == '' or source == '':
+        return 0.0
+    len1 = len(typed_words)
+    len2 = len(source_words)
+    cnt = 0
+    for i in range(min(len1,len2)):
+        if typed_words[i] == source_words[i]:
+            cnt += 1
+    return 100 * cnt / len1
+    
     # END PROBLEM 3
 
 
@@ -97,7 +126,7 @@ def wpm(typed, elapsed):
     """
     assert elapsed > 0, "Elapsed time must be positive"
     # BEGIN PROBLEM 4
-    "*** YOUR CODE HERE ***"
+    return len(typed) * 12 / elapsed
     # END PROBLEM 4
 
 
@@ -125,8 +154,26 @@ def autocorrect(typed_word, word_list, diff_function, limit):
     'testing'
     """
     # BEGIN PROBLEM 5
-    "*** YOUR CODE HERE ***"
+    index = -1
+    min_diff = limit+ 0.0001 # 加一个可以忽略不计的小误差就可以过
+    for i in range(0, len(word_list)):
+        if typed_word == word_list[i]: # 完全一致
+            return typed_word
+        if diff_function(typed_word, word_list[i], limit) <= limit: 
+            if diff_function(typed_word, word_list[i], limit) < min_diff:
+                index = i
+                min_diff = diff_function(typed_word, word_list[i], limit)
+    return typed_word if index == -1 else word_list[index] # 全都超过limit & 有最小的，相同时返回第一个
     # END PROBLEM 5
+    
+    # 这个样例最后通过是靠加了一个小误差实现的：
+    # autocorrect('stilter', ['modernizer', 'posticum', 'undiscernible', 'heterotrophic', 'waller', 'marque', 'dephosphorization'], lambda x, y, lim: min(lim + 1, abs(len(x) - len(y))), 1)
+    # 'stilter'
+    # Error: expected
+    #     'posticum'
+    # but got
+    #     'stilter'
+    
 
 
 def sphinx_fixes(typed, source, limit):
@@ -152,7 +199,13 @@ def sphinx_fixes(typed, source, limit):
     5
     """
     # BEGIN PROBLEM 6
-    assert False, "Remove this line"
+    diff = abs(len(typed)-len(source))
+    cnt = 0
+    for i in range(min(len(typed), len(source))):
+        cnt += (1 - (typed[i] == source[i]))
+        if cnt > limit:
+            return limit+1
+    return cnt + diff
     # END PROBLEM 6
 
 
@@ -172,21 +225,21 @@ def minimum_mewtations(typed, source, limit):
     3
     """
     # BEGIN PROBLEM 7
-    assert False, "Remove this line"
-    if ______________:  # Fill in the condition
+    if limit < 0:
+        return float('inf')
+    if typed == '' or source == '':  # Fill in the condition
         # BEGIN
-        "*** YOUR CODE HERE ***"
+        return max(len(typed), len(source))
         # END
-    elif ___________:  # Feel free to remove or add additional cases
-        # BEGIN
-        "*** YOUR CODE HERE ***"
-        # END
+    if typed[0] == source[0]:
+        return minimum_mewtations(typed[1:], source[1:], limit)
+
     else:
-        add = ...  # Fill in these lines
-        remove = ...
-        substitute = ...
+        add = 1 + minimum_mewtations(typed, source[1:], limit - 1) # Fill in these lines
+        remove = 1 + minimum_mewtations(typed[1:], source, limit - 1)
+        substitute = 1 + minimum_mewtations(typed[1:], source[1:], limit - 1) 
         # BEGIN
-        "*** YOUR CODE HERE ***"
+        return min(add, remove, substitute)
         # END
     # END PROBLEM 7
 
@@ -194,11 +247,42 @@ def minimum_mewtations(typed, source, limit):
 def final_diff(typed, source, limit):
     """A diff function that takes in a string TYPED, a string SOURCE, and a number LIMIT.
     If you implement this function, it will be used."""
-    assert False, "Remove this line to use your final_diff function."
+    if limit < 0:
+        return float('inf')
+    if typed == '' or source == '':  # Fill in the condition
+        # BEGIN
+        return max(len(typed), len(source))
+        # END
+    if typed[0] == source[0]:
+        return minimum_mewtations(typed[1:], source[1:], limit)
 
+    else:
+        add = 1 + minimum_mewtations(typed, source[1:], limit - 1) # Fill in these lines
+        remove = 1 + minimum_mewtations(typed[1:], source, limit - 1)
+        substitute = 1 + minimum_mewtations(typed[1:], source[1:], limit - 1) 
+        swap = 1 + minimum_mewtations(typed[1] + typed[0] + typed[2:], source, limit - 1) if len(typed) >= 2 else float('inf')
+        # BEGIN
+        return min(add, remove, substitute, swap)
+        # END
 
 FINAL_DIFF_LIMIT = 6  # REPLACE THIS WITH YOUR LIMIT
 
+'''
+采用了swap方案的final_diff:
+
+Correction Speed: 280.918645259907 wpm
+Correctly Corrected: 147 words
+Incorrectly Corrected: 47 words
+Uncorrected: 18 words
+
+采用minimum_mewtation:
+
+Correction Speed: 390.13864413026664 wpm
+Correctly Corrected: 209 words
+Incorrectly Corrected: 61 words
+Uncorrected: 23 words
+
+'''
 
 ###########
 # Phase 3 #
@@ -229,7 +313,16 @@ def report_progress(typed, prompt, user_id, upload):
     0.2
     """
     # BEGIN PROBLEM 8
-    "*** YOUR CODE HERE ***"
+    len1 = len(prompt)
+    i = 0
+    while i < min(len1, len(typed)):
+        if typed[i] != prompt[i]:
+            break
+        i += 1
+    ratio = i / len1
+    
+    print("ID: "+str(user_id)+" "+"Progress: "+str(ratio))
+    return ratio
     # END PROBLEM 8
 
 
@@ -251,7 +344,15 @@ def time_per_word(words, times_per_player):
     [[6, 3, 6, 2], [10, 6, 1, 2]]
     """
     # BEGIN PROBLEM 9
-    "*** YOUR CODE HERE ***"
+    g = {"words": [], "times": []}
+    
+    g["words"] = words
+    for l in times_per_player:
+        li = []
+        for i in range(len(l)-1):
+            li.append(l[i+1] - l[i])
+        g["times"].append(li)
+    return g
     # END PROBLEM 9
 
 
@@ -274,7 +375,22 @@ def fastest_words(game):
     player_indices = range(len(get_all_times(game)))
     word_indices = range(len(get_all_words(game)))
     # BEGIN PROBLEM 10
-    "*** YOUR CODE HERE ***"
+    res = [[] for _ in player_indices]
+    def get_min_index(game, index):
+        ind = 0
+        tl = get_all_times(game)
+        pl = get_all_words(game)
+        m = tl[0][index]
+        for i in player_indices:
+            if tl[i][index] < m:
+                m = tl[i][index]
+                ind = i
+        return ind
+            
+    for i in word_indices:
+        min = get_min_index(game, i)
+        res[min].append(get_all_words(game)[i])
+    return res
     # END PROBLEM 10
 
 

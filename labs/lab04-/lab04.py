@@ -32,7 +32,12 @@ def pair(x, y):
     >>> snd(p)
     2
     """
-    "*** YOUR CODE HERE ***"
+    def p(n):
+        if n == 0:
+            return x
+        else:
+            return y
+    return p
 
 
 def change_fst(p, v):
@@ -49,7 +54,9 @@ def change_fst(p, v):
     >>> snd(p)
     2
     """
-    "*** YOUR CODE HERE ***"
+    y = snd(p)
+    p_ = pair(v, y)
+    return p_
 
 
 def change_snd(p, v):
@@ -66,7 +73,9 @@ def change_snd(p, v):
     >>> snd(p)
     3
     """
-    "*** YOUR CODE HERE ***"
+    x = fst(p)
+    p_ = pair(x, v)
+    return p_
 
 
 # Problem 4.1.2.1
@@ -81,8 +90,11 @@ def distance(city1, city2):
     >>> distance(city3, city4)
     5.0
     """
-    "*** YOUR CODE HERE ***"
-
+    x1 = get_lat(city1)
+    y1 = get_lon(city1)
+    x2 = get_lat(city2)
+    y2 = get_lon(city2)
+    return sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 # Problem 4.1.2.2
 def closer_city(lat, lon, city1, city2):
@@ -99,7 +111,12 @@ def closer_city(lat, lon, city1, city2):
     >>> closer_city(41.29, 174.78, bucharest, vienna)
     'Bucharest'
     """
-    "*** YOUR CODE HERE ***"
+    temp = make_city('temp', lat, lon)
+    
+    if distance(temp, city1) < distance(temp, city2):
+        return get_name(city1)
+    else:
+        return get_name(city2)
 
 
 # Problem 4.2.1
@@ -120,7 +137,7 @@ def deep(l):
     >>> len(a) == len(b)
     True
     """
-    "*** YOUR CODE HERE ***"
+    return [sub[::] for sub in l]
 
 
 # Problem 4.2.2
@@ -136,7 +153,7 @@ def my_reverse(l):
     >>> a
     ['S', 'I', 'C', 'P']
     """
-    "*** YOUR CODE HERE ***"
+    return l[::-1]
 
 
 # Problem 4.2.3
@@ -158,7 +175,14 @@ def my_split(f, l):
     >>> studentIDs # You should not mutate the original list
     ['24122', '22122', '502024', '24183']
     """
-    "*** YOUR CODE HERE ***"
+    list1 = []
+    list2 = []
+    for e in l:
+        if f(e):
+            list1.append(e)
+        else:
+            list2.append(e)
+    return (list1, list2)
 
 
 # Problem 4.3.1
@@ -172,7 +196,10 @@ def preorder(t):
     >>> preorder(tree(2, [tree(4, [tree(6)])]))
     [2, 4, 6]
     """
-    "*** YOUR CODE HERE ***"
+    list = [label(t)]
+    for b in branches(t):
+        list.extend(preorder(b))
+    return list
 
 
 # Problem 4.3.2
@@ -190,7 +217,12 @@ def is_binary(t):
     >>> is_binary(tree(1, [tree(2), tree(4, [tree(5, [tree(6), tree(7)]), tree(8), tree(9)])]))
     False
     """
-    "*** YOUR CODE HERE ***"
+    if len(branches(t)) > 2:
+        return False
+    for b in branches(t):
+        if not is_binary(b):
+            return False
+    return True
 
 
 # Problem 4.3.3
@@ -227,7 +259,12 @@ def sprout_leaves(t, values):
           1
           2
     """
-    "*** YOUR CODE HERE ***"
+    if is_leaf(t):
+        new_branches = [tree(v) for v in values]
+        return tree(label(t), new_branches)
+    else:
+        new_branches = [sprout_leaves(b, values) for b in branches(t)]
+        return tree(label(t), new_branches)
 
 
 def insert_items(lst, entry, elem):
@@ -246,4 +283,10 @@ def insert_items(lst, entry, elem):
     >>> large_lst3 is large_lst
     True
     """
-    "*** YOUR CODE HERE ***"
+    i = 0
+    while i < len(lst):
+        if lst[i] == entry:
+            lst.insert(i+1,elem)
+            i += 1
+        i += 1
+    return lst

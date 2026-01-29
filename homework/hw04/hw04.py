@@ -15,7 +15,7 @@ def fn_empty():
     >>> fn_empty()
     []
     """
-    "*** YOUR CODE HERE ***"
+    return []
 
 
 def fn_remap(fn, x, y):
@@ -29,8 +29,13 @@ def fn_remap(fn, x, y):
     >>> fn_remap(f, 2, 3)
     [[1, 2], [2, 3]]
     """
-    "*** YOUR CODE HERE ***"
-
+    f = deepcopy(fn)
+    for e in f:
+        if e[0] == x:
+            e[1] = y
+            return f
+    f.append([x,y])
+    return f
 
 def fn_domain(fn):
     """Return a sorted list of all the inputs (domain) of fn.
@@ -45,7 +50,11 @@ def fn_domain(fn):
     >>> fn_domain(fn_remap(fn_empty(), 1, None))
     []
     """
-    "*** YOUR CODE HERE ***"
+    list = []
+    for e in fn:
+        if e[1] != None:
+            list.append(e[0])
+    return sorted(list)
 
 
 def fn_call(fn, x):
@@ -61,7 +70,10 @@ def fn_call(fn, x):
     >>> fn_call(fn_empty(), 1) is None
     True
     """
-    "*** YOUR CODE HERE ***"
+    for e in fn:
+        if e[0] == x:
+            return e[1]
+    return None
 
 
 # Problem 1.2
@@ -79,7 +91,10 @@ def fn_ext(fn1, fn2):
     >>> fn_ext(fn_remap(f, 2, 3), fn_remap(g, 1, 2))
     True
     """
-    "*** YOUR CODE HERE ***"
+    for e in fn1:
+        if fn_call(fn2, e[0]) != e[1]:
+            return False
+    return True
 
 
 def fn_compose(fn1, fn2):
@@ -95,7 +110,11 @@ def fn_compose(fn1, fn2):
     >>> fn_call(h, 2) is None
     True
     """
-    "*** YOUR CODE HERE ***"
+    f = deepcopy(fn2)
+    for e in fn2:
+        res = fn_call(fn1, fn_call(fn2, e[0]))
+        f = fn_remap(f, e[0], res)
+    return f
 
 
 def fn_inverse(fn):
@@ -111,7 +130,22 @@ def fn_inverse(fn):
     >>> fn_inverse(g) is None
     True
     """
-    "*** YOUR CODE HERE ***"
+    def is_invertible(fn):
+        list = []
+        for e in fn:
+            list.append(fn_call(fn, e[0]))
+        list = sorted(list)
+        for i in range(len(fn)-1):
+            if list[i] == list[i+1]:
+                return False
+        return True
+        
+    f = deepcopy(fn)
+    if not is_invertible(fn):
+        return None
+    for e in f:
+        e[0], e[1] = e[1], e[0]
+    return f 
 
 
 # Problem 2.1
@@ -150,7 +184,25 @@ def add_trees(t1, t2):
         5
       5
     """
-    "*** YOUR CODE HERE ***"
+    
+    if t1 == None:
+        return t2
+    if t2 == None:
+        return t1
+    
+    nl = label(t1) + label(t2)
+    b1 = branches(t1)
+    b2 = branches(t2)
+    new = []
+    
+    for i in range(min(len(b1), len(b2))):
+        new.append(add_trees(b1[i], b2[i]))
+    for i in range(min(len(b1), len(b2)), len(b1)):
+        new.append(b1[i])
+    for i in range(min(len(b1), len(b2)), len(b2)):
+        new.append(b2[i])
+    
+    return tree(nl, new)
 
 
 # Problem 2.2
@@ -165,8 +217,13 @@ def bigpath(t, n):
     >>> bigpath(t, 9)
     1
     """
-    "*** YOUR CODE HERE ***"
-
+    def count(t,sum):
+        sum += label(t)
+        cnt = 1 if sum >= n else 0
+        for b in branches(t):
+            cnt += count(b, sum)
+        return cnt
+    return count(t, 0)
 
 # Problem 2.3
 def bigger_path(t, n):
@@ -180,7 +237,12 @@ def bigger_path(t, n):
     >>> bigger_path(t, 9)
     1
     """
-    "*** YOUR CODE HERE ***"
+    if is_leaf(t):
+        return 1 if label(t) >= n else 0
+    sum = bigpath(t,n)
+    for b in branches(t):
+        sum += bigger_path(b, n) 
+    return sum
 
 
 # Problem 2.4
@@ -213,7 +275,16 @@ def has_path(t, word):
     False
     """
     assert len(word) > 0, "no path for empty word."
-    "*** YOUR CODE HERE ***"
+    def dfs(t, word, d):
+        if word[d] != label(t): # 只需要考虑两种终止条件就行了. 1.某个位置不匹配
+            return False
+        if d == len(word) - 1:  # 2.匹配完成
+            return True 
+        for b in branches(t):
+            if dfs(b, word, d+1): # 考虑递归判断
+                return True
+        return False
+    return dfs(t, word, 0)
 
 
 ##########################
@@ -224,7 +295,10 @@ def has_path(t, word):
 # Problem 3
 def fold_tree(t, base_func, merge_func):
     """Fold tree into a value according to base_func and merge_func"""
-    "*** YOUR CODE HERE ***"
+    if is_leaf(t):
+        return base_func(label(t))
+    else:
+        return merge_func(label(t), [fold_tree(b, base_func, merge_func) for b in branches(t)])
 
 
 def count_leaves(t):
@@ -234,7 +308,7 @@ def count_leaves(t):
     >>> count_leaves(t)
     3
     """
-    return fold_tree(t, "YOUR EXPRESSION HERE", "YOUR EXPRESSION HERE")
+    return fold_tree(t, lambda x: 1, lambda x, b: sum(b))
 
 
 def label_sum(t):
@@ -244,7 +318,7 @@ def label_sum(t):
     >>> label_sum(t)
     15
     """
-    return fold_tree(t, "YOUR EXPRESSION HERE", "YOUR EXPRESSION HERE")
+    return fold_tree(t, lambda x: x, lambda x, b: x + sum(b))
 
 
 def preorder(t):
@@ -255,7 +329,7 @@ def preorder(t):
     >>> preorder(t)
     [1, 2, 3, 4, 5]
     """
-    return fold_tree(t, "YOUR EXPRESSION HERE", "YOUR EXPRESSION HERE")
+    return fold_tree(t, lambda x: [x], lambda x, b: [x] + sum(b ,[])) # sum(iterable, start = 0)
 
 
 def has_path_fold(t, word):
@@ -288,9 +362,9 @@ def has_path_fold(t, word):
     """
     assert len(word) > 0, "no path for empty word."
 
-    def base_func(l):
-        return "YOUR EXPRESSION HERE"
-    def merge_func(l, bs):
-        return "YOUR EXPRESSION HERE"
+    def base_func(l): # 针对is_leaf
+        return lambda w: len(w) == 1 and w[0] == l
+    def merge_func(l, bs): # 如果不是leaf但word长度 = 1且在树中间出现了
+        return lambda w: (len(w) == 1 and w[0] == l) or (len(w) > 1 and w[0] == l and any(b(w[1:]) for b in bs))
 
     return fold_tree(t, base_func, merge_func)(word)
