@@ -56,7 +56,10 @@ class VendingMachine:
 
     def __init__(self, product: str, price: int):
         """Set the product and its price, as well as other instance attributes."""
-        "*** YOUR CODE HERE ***"
+        self.product = product
+        self.price = price
+        self.stock = 0
+        self.balance = 0
 
     def restock(self, quantity: int) -> str:
         """Add quantity to the stock and return a message about the updated stock level.
@@ -64,7 +67,9 @@ class VendingMachine:
         E.g., Current candy stock: 3
         """
         assert quantity > 0
-        "*** YOUR CODE HERE ***"
+        self.stock += quantity
+        
+        return 'Current {1} stock: {0}'.format(self.stock, self.product)
 
     def add_funds(self, funds: int) -> str:
         """If the machine is out of stock, return a message informing the user to restock
@@ -76,7 +81,11 @@ class VendingMachine:
 
         E.g., Current balance: $4
         """
-        "*** YOUR CODE HERE ***"
+        self.balance += funds
+        if self.stock == 0:
+            self.balance -= funds
+            return 'Machine is out of stock. Here is your ${0}.'.format(self.balance + funds)
+        return 'Current balance: ${0}'.format(self.balance)
 
     def vend(self) -> str:
         """Dispense the product if there is sufficient stock and funds and
@@ -90,8 +99,21 @@ class VendingMachine:
         E.g., Machine is out of stock.
         E.g., You must add $3 more funds.
         """
-        "*** YOUR CODE HERE ***"
-
+        if self.stock == 0:
+            return 'Machine is out of stock.'
+        if self.balance < self.price:
+            return 'You must add ${0} more funds.'.format(self.price - self.balance)
+        
+        self.stock -= 1
+        
+        if self.balance == self.price:
+            self.balance = 0
+            return 'Here is your {0}.'.format(self.product)
+        
+        self.balance -= self.price
+        s = self.balance
+        self.balance = 0
+        return 'Here is your {0} and ${1} change.'.format(self.product, s)
 
 class Pet:
     """A pet.
@@ -115,7 +137,7 @@ class Pet:
         print(self.name)
 
     def to_str(self):
-        "*** YOUR CODE HERE ***"
+        return '({0}, {1})'.format(self.name, self.owner)
 
 
 class Cat(Pet):
@@ -144,24 +166,33 @@ class Cat(Pet):
     """
 
     def __init__(self, name, owner, lives=9):
-        "*** YOUR CODE HERE ***"
+        self.name = name
+        self.owner = owner
+        self.lives = lives
+        self.is_alive = True
 
     def talk(self):
         """Print out a cat's greeting."""
-        "*** YOUR CODE HERE ***"
+        print('{0} says meow!'.format(self.name))
 
     def lose_life(self):
         """Decrements a cat's life by 1. When lives reaches zero, 'is_alive'
         becomes False. If this is called after lives has reached zero, print out
         that the cat has no more lives to lose.
         """
-        "*** YOUR CODE HERE ***"
+        if self.is_alive == False:
+            print('{0} has no more lives to lose.'.format(self.name))
+        
+        if self.lives == 1:
+            self.is_alive = False
+        
+        self.lives -= 1
 
     def to_str(self):
-        "*** YOUR CODE HERE ***"
+        return '({0}, {1}, {2})'.format(self.name, self.owner, self.lives)
 
 
-class NoisyCat:  # Does this line need to change?
+class NoisyCat(Cat):  # Does this line need to change?
     """A Cat that repeats things twice.
 
     >>> chocola = NoisyCat('Chocola', 'Minazuki Kashou')
@@ -174,11 +205,12 @@ class NoisyCat:  # Does this line need to change?
 
     def __init__(self, name, owner, lives=9):
         # Is this method necessary? If not, feel free to remove it.
-        "*** YOUR CODE HERE ***"
+        self.name = name
 
     def talk(self):
         """Talks twice as much as a regular cat."""
-        "*** YOUR CODE HERE ***"
+        print('{0} says meow!'.format(self.name))
+        print('{0} says meow!'.format(self.name))
 
 
 class Colors:
@@ -198,4 +230,7 @@ def pretty_print(obj):
     >>> pretty_print(kyubey)
     \033[34mPet\033[0m\033[35m(Kyubey, Incubator)\033[0m
     """
-    "*** YOUR CODE HERE ***"
+    if type(obj).__name__ == 'Pet':
+        print(f"{Colors.OKBLUE}{type(obj).__name__}{Colors.ENDC}{Colors.OKCYAN}({obj.name}, {obj.owner}){Colors.ENDC}")
+    else:
+        print(f"{Colors.OKBLUE}{type(obj).__name__}{Colors.ENDC}{Colors.OKCYAN}({obj.name}, {obj.owner}, {obj.lives}){Colors.ENDC}")

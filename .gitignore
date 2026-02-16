@@ -17,7 +17,6 @@ ok
 *.txt
 *.sql
 *.json
-*.scm
 *.dat
 *.dir
 *.bak
@@ -37,6 +36,8 @@ hog_gui.py
 dice.py
 test.py
 cats_gui.py
+gui.py
+ants_plans.py
 projects/hogcon/
 projects/proj01-/.gitignore
 homework/hw00-/.gitignore
@@ -44,3 +45,4 @@ labs/lab00-/.gitignore
 homework/hw01-/.gitignore
 homework/hw02-/.gitignore
 labs/lab01-/.gitignore
+ADT.py

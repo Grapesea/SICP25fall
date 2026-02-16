@@ -36,8 +36,35 @@ class Complex:
         self.real = real
         self.imaginary = imaginary
     
-    "*** YOUR CODE HERE ***"
+    def __add__(self, other):
+        t = Complex(self.real, self.imaginary)
+        t.real += other.real
+        t.imaginary += other.imaginary
+        return t
 
+    def __mul__(self, other):
+        t = Complex(0,0)
+        t.real = self.real * other.real - self.imaginary * other.imaginary
+        t.imaginary = self.imaginary * other.real + other.imaginary * self.real
+        return t
+    
+    def __repr__(self):
+        return f"Complex(real={self.real}, imaginary={self.imaginary})"
+        
+    def __str__(self):
+        if self.real == 0 & self.imaginary == 0:
+            return "0"
+        elif self.real == 0:
+            return f"{self.imaginary}i"
+        elif self.imaginary == 0:
+            return f"{self.real}"
+        else:
+            res = f"{self.real}"
+            if self.imaginary > 0:
+                res += (f" + {self.imaginary}i")
+            else:
+                res += (f" - {-self.imaginary}i")
+        return res
 
 def store_digits(n):
     """Stores the digits of a positive number n in a linked list.
@@ -50,7 +77,12 @@ def store_digits(n):
     >>> store_digits(8760)
     Link(8, Link(7, Link(6, Link(0))))
     """
-    "*** YOUR CODE HERE ***"
+    digits = str(n)
+    res = Link.empty
+    for i in reversed(digits): # link需要倒序进行append
+        res = Link(int(i), res)
+    
+    return res
 
 
 def convert(link):
@@ -64,7 +96,19 @@ def convert(link):
     >>> type(convert(l)) is list
     True
     """
-    "*** YOUR CODE HERE ***"
+    res = []
+    if link == Link.empty:
+        return res
+    
+    if isinstance(link.first, Link): # 跟样例一致，first是Link，所以递归处理；否则直接添加
+        res.append(convert(link.first))
+    else:
+        res.append(link.first)
+        
+    if link.rest != Link.empty:
+        res.extend(convert(link.rest))
+    
+    return res
 
 
 def cumulative_mul(t):
@@ -76,9 +120,14 @@ def cumulative_mul(t):
     >>> t
     Tree(105, [Tree(15, [Tree(5)]), Tree(7)])
     """
-    "*** YOUR CODE HERE ***"
-
-
+    if t.is_leaf():
+        return t
+    for b in t.branches:
+        cumulative_mul(b)
+        t.label *= b.label
+    # return t      令人困惑的是样例点不让我返回t，注释掉这行才能过
+    
+    
 def prune(t, n):
     """Prune the tree mutatively, keeping only the n branches
     of each node with the smallest label.
@@ -96,7 +145,12 @@ def prune(t, n):
     >>> t3
     Tree(6, [Tree(1), Tree(3, [Tree(1), Tree(2)])])
     """
-    "*** YOUR CODE HERE ***"
+    if t.is_leaf():
+        return
+    t.branches.sort(key=lambda x: x.label) # 按照label排序, 这里用按照key=label排序的语法
+    t.branches = t.branches[:n] # 只保留前n个
+    for b in t.branches:
+        prune(b, n)
 
 
 #####################

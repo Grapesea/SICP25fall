@@ -29,7 +29,73 @@ class Polynomial:
     >>> print(zero)
     0
     """
-    "*** YOUR CODE HERE ***"
+    def __init__(self, coefficients):
+        self.coefficients = coefficients
+    
+    def __add__(self, other):
+        c = self.coefficients.copy() 
+        # 第二次遇到这个问题了，需要仔细看是否为原处改动
+        l1 = len(self.coefficients)
+        l2 = len(other.coefficients)
+        
+        for i in range(min(l1,l2)):
+            c[i] += other.coefficients[i]
+        if l1 < l2:
+            c.extend(other.coefficients[l1:])
+        return Polynomial(c)
+
+    def __mul__(self, other):        
+        l1 = len(self.coefficients)
+        l2 = len(other.coefficients)
+        m = [0 for _ in range(l1 + l2 -1)]
+        
+        for i in range(len(m)): #计算i次幂的系数
+            for j in range(max(i - l2 + 1, 0), min(l1 - 1, i) + 1): # 同时满足 0 <= j <= l1-1 && 0 <= i-j <= l2-1
+                m[i] += (self.coefficients[j] * other.coefficients[i-j])
+        n = Polynomial(m)   
+        
+        return n
+    
+    def __repr__(self):
+        if len(self.coefficients) == 1:
+            return f"Polynomial({self.coefficients})"
+        
+        while self.coefficients[-1] == 0:
+            self.coefficients.pop()
+        return f"Polynomial({self.coefficients})"
+        
+    def __str__(self):
+        m = self.coefficients
+        res = ""
+        if len(m) == 1:
+            return f"{m[0]}"
+        
+        elif len(m) == 2:
+            res = ""
+            if m[1] > 0:
+                res += f"{m[1]}x "
+            elif m[1] < 0:
+                res += f" - {abs(m[1])}x "
+            if m[0] > 0:
+                res += f" + {m[0]}"
+            elif m[0] < 0:
+                res += f"+ {m[0]}"
+            else:
+                res += "0"
+        else:
+            for i in range(len(m)):
+                if m[i] == 0:
+                    if i == 0:
+                        res += f"0"
+                    else:
+                        res += f" + 0*x^{i}"
+                else:
+                    if i == 0:
+                        res += f"{m[i]}"
+                    else:
+                        res += f" + {m[i]}*x^{i}"
+        return res
+
 
 
 def remove_duplicates(lnk):
@@ -44,7 +110,15 @@ def remove_duplicates(lnk):
     >>> lnk
     Link(1, Link(5))
     """
-    "*** YOUR CODE HERE ***"
+    # 刚开始我就有个疑惑，这个题要考虑 Link(1, Link(2, Link(1))) 这种情况吗，但这个违反了sorted原则.
+    
+    if lnk.rest is Link.empty:
+        return
+    if lnk.rest.first == lnk.first:
+        lnk.rest = lnk.rest.rest # 保留first节点
+        remove_duplicates(lnk) # 这里是考虑到样例中的多重重复，所以接着检查当前节点
+    else:
+        remove_duplicates(lnk.rest) # 继续考虑子问题
 
 def reverse(lnk):
     """ Reverse a linked list.
@@ -61,7 +135,13 @@ def reverse(lnk):
     >>> a.first # Make sure you do not change first
     1
     """
-    "*** YOUR CODE HERE ***"
+    if lnk is Link.empty or lnk.rest is Link.empty:
+        return lnk
+    rst = reverse(lnk.rest) # 获得新的“头指针”，也就是最后一个值
+    
+    lnk.rest.rest = lnk
+    lnk.rest = Link.empty # 反转指针指向
+    return rst
     
 def rotate_right(lnk):
     """Rotate the linked list one step to the right.
@@ -78,8 +158,16 @@ def rotate_right(lnk):
     >>> a.first   # Make sure original first not overwritten
     1
     """
-    "*** YOUR CODE HERE ***"
+    p = lnk
+    p_prev = lnk
+    while p.rest is not Link.empty:
+        p_prev = p
+        p = p.rest
+    p_prev.rest = Link.empty
+    p.rest = lnk
+    return p
 
+    # 折腾了很久C++，刚开始看这种结构实现觉得很奇怪，但实质上是一样的.
 
 class Tree:
     """
@@ -117,7 +205,7 @@ class Tree:
 
         return print_tree(self).rstrip()
     
-    def __eq__(self): # Does this line need to be changed?
+    def __eq__(self, other): # Does this line need to be changed?
         """Returns whether two trees are equivalent.
 
         >>> t1 = Tree(1, [Tree(2, [Tree(3), Tree(4)]), Tree(5, [Tree(6)]), Tree(7)])
@@ -132,7 +220,16 @@ class Tree:
         >>> t1 == t3 or t1 == t4 or t1 == t5
         False
         """
-        "*** YOUR CODE HERE ***"
+        
+        if self.label != other.label:
+            return False
+        if len(self.branches) != len(other.branches):
+            return False
+        for b in range(len(self.branches)):
+            if not Tree.__eq__(self.branches[b], other.branches[b]):
+                return False
+        return True
+        
         
         
 def is_bst(t):
@@ -160,7 +257,35 @@ def is_bst(t):
     >>> is_bst(t7)
     False
     """
-    "*** YOUR CODE HERE ***"        
+    def bst_min(t):
+        if Tree.is_leaf(t):
+            return t.label
+        return bst_min(t.branches[0])
+    
+    def bst_max(t):
+        if Tree.is_leaf(t):
+            return t.label
+        if len(t.branches) == 1:
+            return bst_max(t.branches[0])
+        if len(t.branches) == 2:
+            return bst_max(t.branches[1])
+    
+    if len(t.branches) > 2:
+        return False
+    if not Tree.is_leaf(t):
+        if len(t.branches) == 2:
+            if t.branches[1].label <= t.label or t.branches[0].label > t.label:
+                return False
+        if len(t.branches) == 2:
+            if bst_min(t.branches[0]) > t.label:
+                return False
+            if bst_max(t.branches[1]) < t.label:
+                return False
+        
+        for b in t.branches:
+            if not is_bst(b):
+                return False
+    return True
 
 
 def count_coins(total, denominations):
@@ -225,7 +350,26 @@ def count_coins_tree(total, denominations):
                                 1, [1, 5, 10, 25]
                                   1
     """
-    "*** YOUR CODE HERE ***"
+    if total == 0:
+        return Tree("1")
+    if total < 0:
+        return None
+    if len(denominations) == 0:
+        return None
+    
+    without_current = count_coins_tree(total, denominations[1:])
+    with_current = count_coins_tree(total - denominations[0], denominations)
+    
+    b = []
+    if without_current is not None:
+        b.append(without_current)
+    if with_current is not None:
+        b.append(with_current)
+    
+    if len(b) == 0:
+        return None
+    l = f"{total}, {denominations}" # 输出结果看起来很长，实则是字符串构成的Tree节点label
+    return Tree(l, b)
 
 
 ##########################
@@ -245,7 +389,28 @@ def has_cycle(lnk):
     >>> has_cycle(lnk)
     True
     """
-    "*** YOUR CODE HERE ***"
+    def is_cycle(lnk): #因为成环只可能在链表的末尾，所以可以写一个辅助的判断函数.
+        if lnk is Link.empty:
+            return False
+        if lnk.rest is Link.empty:
+            return False
+        
+        f = lnk.rest
+        while f.rest:
+            f = f.rest
+            if f == lnk:
+                return True
+        return False
+    
+    if lnk.rest is Link.empty:
+        return False
+    p = lnk.rest
+    
+    while p.rest is not Link.empty:
+        p = p.rest
+        if is_cycle(p):
+            return True
+    return False
 
 
 def balance_tree(t):
@@ -256,8 +421,21 @@ def balance_tree(t):
     >>> t1
     Tree(1, [Tree(2, [Tree(3), Tree(3), Tree(3)]), Tree(3, [Tree(4), Tree(4)])])
     """
-    "*** YOUR CODE HERE ***"
-
+    def weight(t):
+        if t.is_leaf():
+            return t.label
+        return t.label + sum(weight(b) for b in t.branches)
+    
+    if t.is_leaf():
+        return
+    for b in t.branches:
+        balance_tree(b)
+    b_w = [weight(b) for b in t.branches]
+    max_bw = max(b_w)
+    
+    for i in range(len(b_w)):
+        t.branches[i].label += (max_bw - b_w[i])
+    
 
 #####################
 #        ADT        #

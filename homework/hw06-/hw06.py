@@ -38,7 +38,16 @@ class Semiring:
         3x + 3
         """
         assert n >= 0, "n must be a non-negative integer."
-        """YOUR CODE HERE"""
+        m = self
+        if type(m).__name__ == 'Matrix':
+            new = [[self.elements[i][j] * n 
+                        for j in range(len(self.elements[0]))] 
+                        for i in range(len(self.elements))]
+            return Matrix(new)
+        
+        else:
+            new = [c * n for c in self.coefficients]
+            return Polynomial(new)
 
     # Problem 1.3
     def power(self, n):
@@ -51,7 +60,25 @@ class Semiring:
         x^3 + 3x^2 + 3x + 1
         """
         assert n >= 0, "Exponent must be a positive integer."
-        """YOUR CODE HERE"""
+        copy = self
+        if n == 0:
+            return copy.one()
+        elif n == 1:
+            return copy
+        elif type(self).__name__ != 'Matrix':
+            res = self.coefficients[:]
+            for _ in range(n-1): # 这里重用了之前的mult函数代码
+                l1 = len(self.coefficients)
+                l2 = len(res)
+                m = [0 for _ in range(l1 + l2 -1)]
+                
+                for i in range(len(m)): 
+                    for j in range(max(i - l2 + 1, 0), min(l1 - 1, i) + 1):
+                        m[i] += (self.coefficients[j] * res[i-j])
+                res = m
+            return Polynomial(res)
+        else:
+            return copy.mult(copy.power(n-1))
 
 # Problem 1.3
 def subst_poly(poly, x):
@@ -70,7 +97,88 @@ def subst_poly(poly, x):
     >>> subst_poly(poly, p)
     3x^4 - 2x^2 + 1
     """
-    """YOUR CODE HERE"""
+    # 看题目意思是将x代入到poly中，返回结果
+    m = poly.coefficients
+    
+    def pr(self): # 这个函数是我自己封装进去的，用于打印最终结果，但是可能太繁琐
+        m = self.coefficients
+        if len(m) == 1:
+            return m[0]
+        elif len(m) == 2:
+            res = ""
+            if m[1] > 0:
+                res += f"{m[1]}x "
+            elif m[1] < 0:
+                res += f" - {abs(m[1])}x "
+            if m[0] > 0:
+                res += f" + {m[0]}"
+            elif m[0] < 0:
+                res += f"+ {m[0]}"
+            else:
+                res += "0"
+                
+        else:
+            res = ""
+            for i in range(len(m)-1, -1, -1):
+                if m[i] == 0:
+                    continue
+                else:
+                    if i == len(m) - 1:
+                        if m[-1] != 1:
+                            res += f"{m[-1]}x^{i}"
+                        else:
+                            res += f"x^{i}"
+                    elif m[i] < 0:
+                        if i == 1:
+                            res += f" - {abs(m[i])}x"
+                        elif i == 0:
+                            res += f" - {abs(m[i])}"
+                        else:
+                            res += f" - {abs(m[i])}x^{i}"
+                    else:
+                        if i == 1:
+                            res += f" + {m[i]}x"
+                        elif i == 0:
+                            res += f" + {m[i]}"
+                        else:
+                            res += f" + {m[i]}x^{i}"
+        return res
+    
+    match type(x).__name__:
+        case 'Integer':
+            val = x.coefficients[0]
+            sum = 0
+            for i in range(len(m)):
+                sum += pow(val, i) * m[i]
+            return sum
+        
+        case 'Matrix':
+            copy = Matrix(x.elements)
+            res = Matrix([[0 for _ in range(len(x.elements[0]))] for _ in range(len(x.elements))])
+            for i in range(len(m)):
+                # print(x.power(i).mul(m[i]).elements)
+                c = copy
+                if i == 0:
+                    res = res.add(c.one().ntimes(m[i]))
+                else:
+                    if m[i] > 0:
+                        res = res.add(c.power(i).ntimes(m[i]))
+                    else:
+                        res = res.add(c.power(i).ntimes(-m[i]).negative())
+
+            return res
+            
+        case 'Polynomial':
+            res = Polynomial([0])
+            for i in range(len(m)):
+                if m[i] != 0:
+                    t = x.power(i)
+                    if m[i] > 0:
+                        res = res.add(t.ntimes(m[i]))
+                    else:
+                        res = res.add(t.ntimes(-m[i]).negative())
+            return res
+        
 
 # Problem 1.1
 class Matrix(Semiring):
@@ -94,7 +202,12 @@ class Matrix(Semiring):
          [10, 10, 10],
          [10, 10, 10]]
         """
-        """YOUR CODE HERE"""
+        m = Matrix([[0,0,0], [0,0,0], [0,0,0]])
+        for i in range(len(self.elements)):
+            for j in range(len(self.elements[0])):
+                m.elements[i][j] += (other.elements[i][j] + self.elements[i][j])
+        return m
+    
     
     def mult(self, other):
         """Returns a new Matrix representing the product of self and other.
@@ -105,7 +218,13 @@ class Matrix(Semiring):
          [84, 69, 54],
          [138, 114, 90]]
         """
-        """YOUR CODE HERE"""
+        m = Matrix([[0,0,0], [0,0,0], [0,0,0]])
+        for i in range(len(self.elements)):
+            for j in range(len(self.elements)):
+                for k in range(len(self.elements)):
+                    m.elements[i][j] += self.elements[i][k] * other.elements[k][j]
+        return m
+                    
     
     def negative(self):
         """Returns a new Matrix representing the additive inverse of self.
@@ -115,15 +234,21 @@ class Matrix(Semiring):
          [4, -5, 6],
          [-7, 8, -9]]
         """
-        """YOUR CODE HERE"""
+        m = Matrix([[0,0,0], [0,0,0], [0,0,0]])
+        for i in range(len(self.elements)):
+            for j in range(len(self.elements)):
+                m.elements[i][j] = -self.elements[i][j]
+        return m
 
     def zero(self):
         """Returns the zero matrix."""
-        """YOUR CODE HERE"""
+        m = Matrix([[0,0,0], [0,0,0], [0,0,0]])
+        return m
     
     def one(self):
         """Returns the identity matrix."""
-        """YOUR CODE HERE"""
+        m = Matrix([[1,0,0], [0,1,0], [0,0,1]])
+        return m
     
     def __repr__(self):
         """Returns the string representation of the matrix.
@@ -145,6 +270,53 @@ class Polynomial(Semiring):
         """
         self.coefficients = coefficients
     
+    '''
+    def print_res(self): # 没仔细读题自己搓了一遍
+        m = self.coefficients
+        if len(m) == 1:
+            print(m[0])
+        elif len(m) == 2:
+            res = ""
+            if m[1] > 0:
+                res += f"{m[1]}x "
+            elif m[1] < 0:
+                res += f" - {abs(m[1])}x "
+            if m[0] > 0:
+                res += f" + {m[0]}"
+            elif m[0] < 0:
+                res += f"+ {m[0]}"
+            else:
+                res += "0"
+            print(res)
+                
+        else:
+            res = ""
+            for i in range(len(m)-1, -1, -1):
+                if m[i] == 0:
+                    continue
+                else:
+                    if i == len(m) - 1:
+                        if m[-1] != 1:
+                            res += f"{m[-1]}x^{i}"
+                        else:
+                            res += f"x^{i}"
+                    elif m[i] < 0:
+                        if i == 1:
+                            res += f" - {abs(m[i])}x"
+                        elif i == 0:
+                            res += f" - {abs(m[i])}"
+                        else:
+                            res += f" - {abs(m[i])}x^{i}"
+                    else:
+                        if i == 1:
+                            res += f" + {m[i]}x"
+                        elif i == 0:
+                            res += f" + {m[i]}"
+                        else:
+                            res += f" + {m[i]}x^{i}"
+            print(res)
+    '''
+    
     def add(self, other):
         """Returns a new Polynomial representing the sum of self and other.
         >>> p1 = Polynomial([1, 2])      # 2x + 1
@@ -152,7 +324,17 @@ class Polynomial(Semiring):
         >>> p1.add(p2)
         5x^2 + 6x + 4
         """
-        """YOUR CODE HERE"""
+        n = self
+        m = n.coefficients
+        l1 = len(m)
+        l2 = len(other.coefficients)
+        for i in range(min(l1,l2)):
+            m[i] += other.coefficients[i]
+        if l1 < l2:
+            for i in range(l1, l2):
+                m.append(other.coefficients[i])
+        
+        return Polynomial(m)
     
     def mult(self, other):
         """Returns a new Polynomial representing the product of self and other.
@@ -161,7 +343,16 @@ class Polynomial(Semiring):
         >>> p1.mult(p2)
         8x^2 + 10x + 3
         """
-        """YOUR CODE HERE"""
+        l1 = len(self.coefficients)
+        l2 = len(other.coefficients)
+        m = [0 for _ in range(l1 + l2 -1)]
+        
+        for i in range(len(m)): #计算i次幂的系数
+            for j in range(max(i - l2 + 1, 0), min(l1 - 1, i) + 1): # 同时满足 0 <= j <= l1-1 && 0 <= i-j <= l2-1
+                m[i] += (self.coefficients[j] * other.coefficients[i-j])
+        n = Polynomial(m)   
+        
+        return n
     
     def negative(self):
         """Returns a new Polynomial representing the additive inverse of self.
@@ -169,15 +360,23 @@ class Polynomial(Semiring):
         >>> p.negative()
         -3x^2 + 2x - 1
         """
-        """YOUR CODE HERE"""
+        m = self.coefficients
+        for i in range(len(m)):
+            m[i] = -m[i]
+
+        n = Polynomial(m)   
+        
+        return n
 
     def zero(self):
         """Returns the zero polynomial."""
-        """YOUR CODE HERE"""
+        m = Polynomial([0])
+        return m
 
     def one(self):
         """Returns the identity polynomial."""
-        """YOUR CODE HERE"""
+        m = Polynomial([1])
+        return m
 
     def __repr__(self):
         """Returns the string representation of the polynomial.
@@ -211,7 +410,7 @@ class Integer(Polynomial):
         >>> Integer(5)
         5
         """
-        """YOUR CODE HERE"""
+        super().__init__([value])
 
     def zero(self):
         """Returns the additive identity integer (0)."""
@@ -244,7 +443,8 @@ class Buff:
         >>> buff.decrease_duration()
         True
         """
-        """YOUR CODE HERE"""
+        self.duration -= 1
+        return self.duration <= 0
     
     def copy(self):
         """Returns a copy of the buff."""
@@ -296,7 +496,7 @@ class Weapon(Equipment):
         >>> print(sword.price)
         100
         """
-        """YOUR CODE HERE"""
+        super().__init__(name, attack_bonus=attack_bonus, price=price)
 
 
 class Armor(Equipment):
@@ -310,7 +510,7 @@ class Armor(Equipment):
         >>> print(shield.price)
         80
         """
-        """YOUR CODE HERE"""
+        super().__init__(name, defense_bonus=defense_bonus, price=price)
 
 
 # Problem 2.2
@@ -336,7 +536,10 @@ class Character:
         >>> char.get_attack()
         25
         """
-        """YOUR CODE HERE"""
+        b = self.base_attack
+        for e in self.buffs:
+            b += e.attack_bonus
+        return b
     
     def get_defense(self):
         """Calculate total defense including buffs.
@@ -346,7 +549,10 @@ class Character:
         >>> char.get_defense()
         13
         """
-        """YOUR CODE HERE"""
+        b = self.base_defense
+        for e in self.buffs:
+            b += e.defense_bonus
+        return b
     
     def take_damage(self, damage):
         """Apply damage, accounting for defense. Returns actual damage taken.
@@ -356,7 +562,16 @@ class Character:
         >>> char.current_hp
         85
         """
-        """YOUR CODE HERE"""
+        if damage <= self.get_defense():
+            return 0
+        real = damage - self.get_defense()
+        if real >= self.current_hp:
+            real = self.current_hp
+            self.current_hp = 0
+            return real
+        self.current_hp -= real
+        return real
+            
     
     def heal(self, amount):
         """Heal the character. Returns actual amount healed."
@@ -367,7 +582,14 @@ class Character:
         >>> char.current_hp
         80
         """
-        """YOUR CODE HERE"""
+        if self.current_hp + amount > self.max_hp:
+            heal = self.max_hp - self.current_hp
+            self.current_hp = self.max_hp
+        else:
+            heal = amount
+            self.current_hp += heal
+        return heal
+        
     
     def update_buffs(self):
         """Update all buffs (decrease duration, remove expired).
@@ -384,7 +606,19 @@ class Character:
         >>> len(char.buffs)
         0
         """
-        """YOUR CODE HERE"""
+        
+        '''
+        错误示范:
+        # Decrease duration by 1. Returns True if expired.
+        for e in self.buffs:
+            f = e.decrease_duration()
+            if f == True:
+                self.buffs.remove(e)
+            print(self.buffs)
+        以上这个做法是错误的.
+        在遍历列表的同时修改了列表, 导致buff2因为buff1被删, 索引向前移动变成了0, 从而被迭代器跳过了
+        '''
+        self.buffs = [b for b in self.buffs if not b.decrease_duration()] 
     
     def basic_attack(self, target):
         """Perform a basic attack on target."""
@@ -405,8 +639,11 @@ class Character:
         >>> char.buffs[0]
         Exhaustion: ATK -5, DEF -3 (2 turns)
         """
-        """YOUR CODE HERE"""
+        actual_damage = target.take_damage(int(self.get_attack() * 1.5))
+        self.buffs.append(Buff("Exhaustion", attack_bonus=-5, defense_bonus=-3, duration=2))
+        # 这个函数的逻辑是，获得1.5倍伤害，代价是获得Exhaustion的buff
         return f"{self.name} uses magic attack on {target.name} for {actual_damage} damage!"
+    
 
     def __repr__(self):
         """Return a status string for the character.
@@ -446,7 +683,10 @@ class Player(Character):
         >>> player.get_attack()
         25
         """
-        """YOUR CODE HERE"""
+        atk = self.base_attack 
+        if self.equipped_weapon != None:
+            atk += self.equipped_weapon.attack_bonus
+        return atk
     
     def get_defense(self):
         """Override to include armor bonus.
@@ -456,7 +696,10 @@ class Player(Character):
         >>> player.get_defense()
         13
         """
-        """YOUR CODE HERE"""
+        dfs = self.base_defense
+        if self.equipped_armor != None:
+            dfs += self.equipped_armor.defense_bonus
+        return dfs
     
     def equip_weapon(self, weapon):
         """Equip a weapon."""
@@ -474,7 +717,10 @@ class Player(Character):
         >>> player.gold
         20
         """
-        """YOUR CODE HERE"""
+        if amount > self.gold:
+            return False
+        self.gold -= amount
+        return True
     
     def use_potion(self):
         """Use a health potion.
@@ -488,7 +734,11 @@ class Player(Character):
         >>> player.potions
         2
         """
-        """YOUR CODE HERE"""
+        if self.potions == 0:
+            return None
+        self.potions -= 1
+        healed = self.max_hp - self.current_hp if (self.max_hp - self.current_hp < 50) else 50
+        self.current_hp += healed
         return f"Used a potion! Restored {healed} HP."
     
     def add_experience(self, amount):
@@ -512,8 +762,22 @@ class Player(Character):
         >>> player.base_attack
         25
         """
-        """YOUR CODE HERE"""
-        return f"Level Up! You are now level {self.level}!"
+        self.experience += amount
+        def judge(exp, level):
+            i = level
+            e = i * (i+1) * 25
+            while exp > e:
+                i+=1
+                e = i * (i+1) * 25
+            return i, i > level
+        self.level, is_up = judge(self.experience, self.level)
+        if is_up:
+            self.max_hp += 20
+            self.current_hp = self.max_hp
+            self.base_attack += 5
+            self.base_defense +=2
+            return f"Level Up! You are now level {self.level}!"
+        return None
 
 
 class Enemy(Character):
@@ -581,8 +845,8 @@ class Boss(Enemy):
             gold_reward=500
         )
         self.description = "The legendary SICP professor who has mastered all paradigms!"
-        # If needed, you can add more attributes here.
-        """YOUR CODE HERE"""
+        self.phase = 1
+        
     
     def choose_action(self, player):
         """Choose action based on current HP and buffs.
@@ -602,5 +866,19 @@ class Boss(Enemy):
         >>> player.current_hp
         0
         """
-        """YOUR CODE HERE"""
-        return f"{self.name} enters a frenzy! (ATK +40, DEF -20)"
+        
+        if self.current_hp < self.max_hp * 0.7:
+            self.phase = 2
+            Buf = Buff("Frenzy", attack_bonus=40, defense_bonus=-20, duration=999)
+            # print(self.buffs)
+            if self.buffs == []:
+                self.buffs.append(Buf)
+                return f"{self.name} enters a frenzy! (ATK +40, DEF -20)"
+        if self.phase == 2:
+            return self.magic_attack(player)
+        
+        if self.phase == 1: #这一行必须放在最后，否则永远不能升级
+            return self.basic_attack(player)
+
+# 玩这个游戏只需要： 
+# $ python game.py

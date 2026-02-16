@@ -17,7 +17,12 @@ def takeWhile(t, p):
     >>> next(s)
     'c'
     """
-    "*** YOUR CODE HERE ***"
+    res = []
+    for i in t:
+        if not p(i):
+            break
+        res.append(i)
+    return res
 
 
 def backAndForth(t):
@@ -37,7 +42,17 @@ def backAndForth(t):
     >>> [next(m) for _ in range(9)]
     [0, 3, 4, 5, 10, 11, 12, 13, 14]
     """
-    "*** YOUR CODE HERE ***"
+    i = 1
+
+    while True:
+        try:
+            for j in range(i):
+                elem = next(t)
+                if i % 2 == 1:
+                    yield elem
+            i += 1
+        except StopIteration:
+            break
 
 
 def scale(it, multiplier):
@@ -58,7 +73,13 @@ def scale(it, multiplier):
     >>> [next(m) for _ in range(5)]
     [0, 2, 4, 6, 8]
     """
-    "*** YOUR CODE HERE ***"
+    while True:
+        try:
+            e = next(it)
+            m = e * multiplier
+            yield m
+        except StopIteration:
+            break
 
 
 def merge(a, b):
@@ -76,8 +97,20 @@ def merge(a, b):
     >>> [next(result) for _ in range(10)]
     [2, 3, 5, 7, 8, 9, 11, 13, 14, 15]
     """
-    "*** YOUR CODE HERE ***"
-
+    a_ = next(a)
+    b_ = next(b)
+    while True:
+        if a_ < b_:
+            yield a_
+            a_ = next(a)
+        elif a_ > b_:
+            yield b_
+            b_ = next(b)
+        else:              # 去除掉duplicate的部分
+            yield a_
+            a_ = next(a)
+            b_ = next(b)
+        
 
 def make_vending_machine(product, price):
     """
@@ -103,4 +136,40 @@ def make_vending_machine(product, price):
     >>> vend()
     'Machine is out of stock.'
     """
-    "*** YOUR CODE HERE ***"
+    num = 0
+    money = 0
+    def deposit(amount): # 
+        assert amount >= 0
+        nonlocal money
+        if amount == 0:
+            return money
+        if num == 0:  
+            return 'Machine is out of stock.'
+        money += amount
+        return money
+    
+    def restock(amount):
+        assert amount >= 0
+        nonlocal num
+        num += amount
+        return num
+    
+    def vend():
+        nonlocal money
+        nonlocal num
+        if num == 0:
+            return 'Machine is out of stock.'
+        if money < price:
+            res = price - money
+            return 'Insufficient balance. Please deposit {0} yuan more.'.format(res)
+        elif money > price:
+            res = money - price
+            money = 0
+            num -= 1
+            return 'Here is your {0} and {1} yuan change.'.format(product, res)
+        else:
+            money = 0
+            num -= 1
+            return 'Here is your {0}.'.format(product)
+    return restock, deposit, vend
+            

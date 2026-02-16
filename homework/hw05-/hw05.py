@@ -35,7 +35,51 @@ def make_withdraw(balance, password):
     >>> type(w(10, 'l33t')) == str
     True
     """
-    "*** YOUR CODE HERE ***"
+    
+    '''
+    global cnt
+    cnt = 0
+    global attempt
+    attempt = []
+    def verify_and_withdraw(money, inpu):
+        nonlocal balance
+        global cnt
+        if cnt >= 3:
+            return "Your account is locked. Attempts: {0}".format(attempt)
+        if inpu != password:
+            cnt += 1
+            attempt.append(inpu)
+            return 'Incorrect password'
+        
+        if money <= balance:
+            balance -= money
+            return balance
+        else:
+            return 'Insufficient funds'
+    return verify_and_withdraw
+    '''
+    # 上面的是一开始写的，能过所有样例.
+    # 下面的是优化版，不需要用cnt而直接使用长度判断；同时也不需要global，因为只调用一次：
+    
+    attempts = []
+    
+    def verify_and_withdraw(money, inpu):
+        nonlocal balance
+        
+        if len(attempts) >= 3:
+            return f"Your account is locked. Attempts: {attempts}"
+        
+        if inpu != password:
+            attempts.append(inpu)
+            return 'Incorrect password'
+        
+        if money <= balance:
+            balance -= money
+            return balance
+        else:
+            return 'Insufficient funds'
+    
+    return verify_and_withdraw
 
 
 def make_joint(withdraw, old_pass, new_pass):
@@ -76,8 +120,16 @@ def make_joint(withdraw, old_pass, new_pass):
     >>> make_joint(w, 'hax0r', 'hello')
     "Your account is locked. Attempts: ['my', 'secret', 'password']"
     """
-    "*** YOUR CODE HERE ***"
-
+    ret = withdraw(0, old_pass)
+    pswd = {}
+    if type(ret) == int: # 这表明取钱成功，返回了余额
+        pswd[new_pass] = old_pass
+        def process(money, password):
+            return withdraw(money, pswd.get(password, password))
+        return process
+    else:
+        return ret
+ 
 
 def distribute_parfait(n, k):
     """Generates all distribution methods of the given number of parfaits n and positive number of members k. 
@@ -100,7 +152,17 @@ def distribute_parfait(n, k):
     >>> sorted(distribute_parfait(5, 2))
     [[1, 4], [2, 3], [3, 2], [4, 1]]
     """
-    "*** YOUR CODE HERE ***"
+    if k <= 0:
+        return
+    if n < k:
+        return
+    if k == 1:
+        yield [n]
+        return
+    
+    for i in range(1, n - k + 2):
+        for tail in distribute_parfait(n - i, k - 1): #考虑递归吧，确实一开始愣住了
+            yield [i] + tail # 列表拼接，能自动返回列表
 
 
 def two_sum_pairs(target, pairs):
@@ -124,7 +186,9 @@ def pairs(lst):
     >>> n * (n - 1) / 2 == pn
     True
     """
-    "*** YOUR CODE HERE ***"
+    for i in range(len(lst)-1):
+        for j in range(i+1, len(lst)):
+            yield lst[i], lst[j]
 
 
 def two_sum_list(target, lst):
@@ -137,7 +201,11 @@ def two_sum_list(target, lst):
     """
     visited = []
     for val in lst:
-        "*** YOUR CODE HERE ***"
+        if val in visited:
+            continue
+        if (target - val) in lst:
+            return True
+        visited.append(val)
 
     return False
 
@@ -155,7 +223,14 @@ def lookups(k, key):
     >>> [f(v) for f in lookups(k, 6)]
     []
     """
-    "*** YOUR CODE HERE ***"
+    if key == label(k):
+        yield lambda v: label(v)
+    
+    for i in range(len(branches(k))):
+        for j in lookups(branches(k)[i], key):
+            yield lambda v: j(branches(v)[i]) 
+            # 碰巧过了样例点！会出错的情况：key同时在某个节点的不同子树中都出现
+            # 理论上为了防止闭包陷阱，应该是 yield (lambda i: lambda v: j(branches(v)[i]))(i)
 
 
 ##########################
@@ -193,7 +268,14 @@ def remainders_generator(m):
     7
     11
     """
-    "*** YOUR CODE HERE ***"
+    def rg(i):
+        n = i
+        while True:
+            yield n
+            n += m
+    for i in range(m):
+        yield rg(i)
+        
 
 
 def starting_from(start):
@@ -203,7 +285,11 @@ def starting_from(start):
     >>> [next(sf) for _ in range(10)] == list(range(10))
     True
     """
-    "*** YOUR CODE HERE ***"
+    s = start
+    while True:
+        yield s
+        s += 1
+        
 
 
 def sieve(t):
@@ -219,8 +305,52 @@ def sieve(t):
     >>> list(sieve(iter([1, 2, 3, 4, 5])))
     [1]
     """
-    "*** YOUR CODE HERE ***"
+    try:
+        s = next(t)
+    except StopIteration:
+        return
+    yield s
+    
+    fil = filter(lambda x: x % s != 0, t)
+    yield from sieve(fil)
+    
+    '''
+    filter函数是将迭代器内的所有满足f的值清除, 返回新的迭代器.
+    
+    举例: list(sieve(iter([2, 3, 4, 5, 6, 7, 8])))
 
+    第1层递归: sieve([2, 3, 4, 5, 6, 7, 8])
+    ├─ s = 2
+    ├─ yield 2
+    ├─ filtered = [3, 5, 7] (过滤掉 4, 6, 8)
+    └─ 递归: sieve([3, 5, 7])
+        │
+        第2层递归: sieve([3, 5, 7])
+        ├─ s = 3
+        ├─ yield 3
+        ├─ filtered = [5, 7] (3的倍数已在上一步被过滤)
+        └─ 递归: sieve([5, 7])
+            │
+            第3层递归: sieve([5, 7])
+            ├─ s = 5
+            ├─ yield 5
+            ├─ filtered = [7] (7 % 5 != 0)
+            └─ 递归: sieve([7])
+                │
+                第4层递归: sieve([7])
+                ├─ s = 7
+                ├─ yield 7
+                ├─ filtered = [] (没有剩余元素)
+                └─ 递归: sieve([])
+                    │
+                    第5层递归: sieve([])
+                    └─ StopIteration, 直接 return
+
+    最终结果: [2, 3, 5, 7]
+    '''
+    
+    
+    
 def primes():
     """Yields all the prime numbers.
 
@@ -228,4 +358,4 @@ def primes():
     >>> [next(p) for _ in range(10)]
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
     """
-    "*** YOUR CODE HERE ***"
+    return sieve(starting_from(2))
