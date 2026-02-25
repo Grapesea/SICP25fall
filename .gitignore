@@ -15,7 +15,6 @@ ok
 *.html
 *.mp3
 *.txt
-*.sql
 *.json
 *.dat
 *.dir

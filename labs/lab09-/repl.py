@@ -26,8 +26,13 @@ if __name__ == '__main__':
                     print(repr(expr))
                 else:
                     print(expr.eval(global_env))
+        except (TypeError) as err:
+            print(type(err).__name__ + ':', err)
+        except AttributeError as err:
+            print(type(err).__name__ + ':', err)
         except (SyntaxError, NameError) as err:
             print(type(err).__name__ + ':', err)
         except (KeyboardInterrupt, EOFError):  # Ctrl-C, Ctrl-D
             print()  # blank line
             break  # exit while loop (and end program)
+        # 异常类型记录： https://docs.python.org/zh-cn/3/library/exceptions.html

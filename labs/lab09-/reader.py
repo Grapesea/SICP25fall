@@ -128,3 +128,15 @@ def read_param(src):
         return token
     else:
         raise SyntaxError("Expected parameter name but got '{}'".format(token))
+    
+'''
+
+> What will read('x') output?
+> Name('x')
+
+> What will read('add(3, 4)') output?
+> CallExpr(Name('add'), [Literal(3), Literal(4)])
+
+
+
+'''

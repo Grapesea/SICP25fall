@@ -106,7 +106,8 @@ class Name(Expr):
         >>> print(Name('c').eval(env))
         None
         """
-        "*** YOUR CODE HERE ***"
+        return env[self.string] if self.string in env.keys() else None
+        # 或者写 return env.get(self.string) 
 
     def __str__(self):
         return self.string
@@ -129,9 +130,10 @@ class LambdaExpr(Expr):
         self.parameters = parameters
         self.body = body
 
-    def eval(self, env):
+    def eval(self, env): 
+        # eval : A method of Expr objects that evaluates the Expr and returns a Value
         return LambdaFunction(self.parameters, self.body, env)
-
+        # A lambda function is the result of evaluating a lambda expression
     def __str__(self):
         body = str(self.body)
         if not self.parameters:
@@ -172,7 +174,10 @@ class CallExpr(Expr):
         >>> read('add(mul(3, 4), b)').eval(new_env)
         Number(14)
         """
-        "*** YOUR CODE HERE ***"
+        operator = self.operator.eval(env)
+        operands = [x.eval(env) for x in self.operands]
+        return operator.apply(operands)
+        # 这里调用了PrimitiveFunc中的apply
 
     def __str__(self):
         function = str(self.operator)
@@ -256,9 +261,9 @@ class LambdaFunction(Value):
     """
     def __init__(self, parameters, body, parent):
         Value.__init__(self, parameters, body, parent)
-        self.parameters = parameters
-        self.body = body
-        self.parent = parent
+        self.parameters = parameters  # Name, Literals, etc.
+        self.body = body     # function name
+        self.parent = parent # env, 类似global_env的字典格式
 
     def apply(self, arguments):
         """
@@ -281,7 +286,12 @@ class LambdaFunction(Value):
         if len(self.parameters) != len(arguments):
             raise TypeError("Oof! Cannot apply number {} to arguments {}".format(
                 comma_separated(self.parameters), comma_separated(arguments)))
-        "*** YOUR CODE HERE ***"
+        
+        d = self.parent.copy()
+        for p in list(zip(self.parameters, arguments)):
+            d[p[0]] = p[1]
+        return self.body.eval(d)
+        # 没想到居然一次过了
 
     def __str__(self):
         definition = LambdaExpr(self.parameters, self.body)
@@ -309,6 +319,7 @@ class PrimitiveFunction(Value):
         return '<primitive function {}>'.format(self.operator.__name__)
 
 # The environment that the REPL evaluates expressions in.
+# Environments are represented as dictionaries that map variable names (strings) to Value objects
 global_env = {
     'abs': PrimitiveFunction(operator.abs),
     'add': PrimitiveFunction(operator.add),
