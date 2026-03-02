@@ -23,7 +23,7 @@ def scheme_eval(expr, env, _=None):  # Optional third argument is ignored
     """
     # Evaluate atoms
     if scheme_symbolp(expr):
-        return env.lookup(expr)
+        return env.lookup(expr) # find the value of a name
     elif self_evaluating(expr):
         return expr
 
@@ -35,7 +35,10 @@ def scheme_eval(expr, env, _=None):  # Optional third argument is ignored
         return scheme_forms.SPECIAL_FORMS[first](rest, env)
     else:
         # BEGIN PROBLEM 3
-        "*** YOUR CODE HERE ***"
+        op1 = scheme_eval(first, env) # operators
+        validate_procedure(op1)
+        op2 = rest.map(lambda op: scheme_eval(op, env)) # operands
+        return scheme_apply(op1, op2, env)
         # END PROBLEM 3
 
 
@@ -45,15 +48,28 @@ def scheme_apply(procedure, args, env):
     validate_procedure(procedure)
     if isinstance(procedure, BuiltinProcedure):
         # BEGIN PROBLEM 2
-        "*** YOUR CODE HERE ***"
+        p = args
+        l = []
+        while p is not nil:
+            l.append(p.first)
+            p = p.rest
+        if procedure.expect_env:
+            l.append(env)
+        try:
+            return procedure.py_func(*l) 
+            # f(1,2,3)等价于f(*[1,2,3])，此处希望传入的是*[1,2,3]
+        except(TypeError):
+            raise SchemeError('incorrect number of arguments')
         # END PROBLEM 2
     elif isinstance(procedure, LambdaProcedure):
         # BEGIN PROBLEM 9
-        "*** YOUR CODE HERE ***"
+        x = procedure.env.make_child_frame(procedure.formals, args)
+        return eval_all(procedure.body, x)
         # END PROBLEM 9
     elif isinstance(procedure, MuProcedure):
         # BEGIN PROBLEM 11
-        "*** YOUR CODE HERE ***"
+        x = env.make_child_frame(procedure.formals, args) # 用的是全局的env，动态绑定动态调整.
+        return eval_all(procedure.body, x)
         # END PROBLEM 11
     else:
         assert False, "Unexpected procedure: {}".format(procedure)
@@ -75,9 +91,11 @@ def eval_all(expressions, env):
     2
     """
     # BEGIN PROBLEM 6
-    return scheme_eval(
-        expressions.first, env
-    )  # replace this with lines of your own code
+    p = expressions
+    while p is not nil and p.rest is not nil:
+        scheme_eval(p.first, env)
+        p = p.rest
+    return scheme_eval(p.first, env) if p is not nil else None
     # END PROBLEM 6
 
 
@@ -106,7 +124,7 @@ def optimize_tail_calls(original_scheme_eval):
             return Unevaluated(expr, env)
 
         # BEGIN PROBLEM EC
-        "*** YOUR CODE HERE ***"
+        # 没时间做了. 跳到下一门课了.
         # END PROBLEM EC
 
     return optimized_eval
@@ -115,4 +133,4 @@ def optimize_tail_calls(original_scheme_eval):
 ################################################################
 # Uncomment the following line to apply tail call optimization #
 ################################################################
-# scheme_eval = optimize_tail_calls(scheme_eval)
+scheme_eval = optimize_tail_calls(scheme_eval)

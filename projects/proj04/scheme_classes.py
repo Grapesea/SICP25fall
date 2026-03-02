@@ -31,13 +31,16 @@ class Frame:
     def define(self, symbol, value):
         """Define Scheme SYMBOL to have VALUE."""
         # BEGIN PROBLEM 1
-        "*** YOUR CODE HERE ***"
+        self.bindings[symbol] = value
         # END PROBLEM 1
 
     def lookup(self, symbol):
         """Return the value bound to SYMBOL. Errors if SYMBOL is not found."""
         # BEGIN PROBLEM 1
-        "*** YOUR CODE HERE ***"
+        if symbol in self.bindings:
+            return self.bindings[symbol]
+        if self.parent is not None:
+            return self.parent.lookup(symbol)
         # END PROBLEM 1
         raise SchemeError("unknown identifier: {0}".format(symbol))
 
@@ -56,7 +59,14 @@ class Frame:
         if len(formals) != len(vals):
             raise SchemeError("Incorrect number of arguments to function call")
         # BEGIN PROBLEM 8
-        "*** YOUR CODE HERE ***"
+        f = formals
+        v = vals
+        x = Frame(self) # 直接用copy()不行，需要使用Frame初始化方法.
+        for _ in range(len(formals)):
+            x.bindings[f.first] = v.first
+            f = f.rest
+            v = v.rest
+        return x
         # END PROBLEM 8
 
 

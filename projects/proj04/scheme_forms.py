@@ -35,18 +35,28 @@ def do_define_form(expressions, env):
         expressions, 2
     )  # Checks that expressions is a list of length at least 2
     signature = expressions.first
-    if scheme_symbolp(signature):
+    if scheme_symbolp(signature): # If a symbol, e.g. a: the expression is defining a name
         # assigning a name to a value e.g. (define x (+ 1 2))
         validate_form(
             expressions, 2, 2
         )  # Checks that expressions is a list of length exactly 2
         # BEGIN PROBLEM 4
-        "*** YOUR CODE HERE ***"
+        value = scheme_eval(expressions.rest.first, env)
+        env.define(signature, value) # 看Frame的bindings方法
+        return signature
         # END PROBLEM 4
     elif isinstance(signature, Pair) and scheme_symbolp(signature.first):
         # defining a named procedure e.g. (define (f x y) (+ x y))
         # BEGIN PROBLEM 10
-        "*** YOUR CODE HERE ***"
+        # (f x y) (+ x y) --> Pair(f, Pair(x, Pair(y, nil))), Pair(...)
+        f = signature.first
+        p = signature.rest
+        while p is not nil: # 需要验证表达式是否正确
+            if not scheme_symbolp(p.first):
+                raise SchemeError
+            p = p.rest
+        env.define(f, LambdaProcedure(signature.rest, expressions.rest, env))
+        return f
         # END PROBLEM 10
     else:
         bad_signature = signature.first if isinstance(signature, Pair) else signature
@@ -60,9 +70,10 @@ def do_quote_form(expressions, env):
     >>> do_quote_form(read_line("((+ x 2))"), env) # evaluating (quote (+ x 2))
     Pair('+', Pair('x', Pair(2, nil)))
     """
-    validate_form(expressions, 1, 1)
+    validate_form(expressions, 1, 1) # 说明expressions是长度为1的list.
     # BEGIN PROBLEM 5
-    "*** YOUR CODE HERE ***"
+    # Lisp 核心观点：用 cons/car/cdr 动态构造代码，再用 eval 执行
+    return expressions.first
     # END PROBLEM 5
 
 
@@ -90,7 +101,8 @@ def do_lambda_form(expressions, env):
     formals = expressions.first
     validate_formals(formals)
     # BEGIN PROBLEM 7
-    "*** YOUR CODE HERE ***"
+    body = expressions.rest
+    return LambdaProcedure(formals, body, env)
     # END PROBLEM 7
 
 
@@ -125,7 +137,14 @@ def do_and_form(expressions, env):
     False
     """
     # BEGIN PROBLEM 12
-    "*** YOUR CODE HERE ***"
+    p = expressions
+    if p is nil:
+        return True
+    while p is not nil and p.rest is not nil:
+        if is_scheme_false(scheme_eval(p.first, env)):
+            return scheme_eval(p.first, env)
+        p = p.rest
+    return scheme_eval(p.first, env)
     # END PROBLEM 12
 
 
@@ -144,7 +163,14 @@ def do_or_form(expressions, env):
     6
     """
     # BEGIN PROBLEM 12
-    "*** YOUR CODE HERE ***"
+    p = expressions
+    if p is nil:
+        return False
+    while p is not nil and p.rest is not nil:
+        if is_scheme_true(scheme_eval(p.first, env)):
+            return scheme_eval(p.first, env)
+        p = p.rest
+    return scheme_eval(p.first, env)
     # END PROBLEM 12
 
 
@@ -165,7 +191,12 @@ def do_cond_form(expressions, env):
             test = scheme_eval(clause.first, env)
         if is_scheme_true(test):
             # BEGIN PROBLEM 13
-            "*** YOUR CODE HERE ***"
+            if clause.rest is nil:
+                return test 
+                # return scheme_eval(clause.first, env)不行
+                # 这样子test又重新print了一次
+            else:
+                return eval_all(clause.rest, env)
             # END PROBLEM 13
         expressions = expressions.rest
 
@@ -191,7 +222,15 @@ def make_let_frame(bindings, env):
         raise SchemeError("bad bindings list in let form")
     names = values = nil
     # BEGIN PROBLEM 14
-    "*** YOUR CODE HERE ***"
+    b = bindings
+    while b is not nil:
+        f = b.first # 第一组binding
+        validate_form(f, 2, 2)
+        names = Pair(f.first, names) # 取出变量名字
+        values = Pair(eval_all(f.rest, env), values) # 倒序添加进入
+        
+        b = b.rest
+    validate_formals(names)
     # END PROBLEM 14
     return env.make_child_frame(names, values)
 
@@ -249,7 +288,8 @@ def do_mu_form(expressions, env):
     formals = expressions.first
     validate_formals(formals)
     # BEGIN PROBLEM 11
-    "*** YOUR CODE HERE ***"
+    x = MuProcedure(formals, expressions.rest)
+    return x
     # END PROBLEM 11
 
 

@@ -26,7 +26,7 @@ CREATE TABLE sentences AS
   SELECT "The two siblings, " || s.sib1 || " plus " || s.sib2 || " have the same size: " || ds1.size
   FROM siblings AS s, dog_sizes AS ds1, dog_sizes AS ds2
   WHERE s.sib1 = ds1.name AND s.sib2 = ds2.name AND ds1.size = ds2.size;
-
+-- 这部分是我想了很久没写明白的
 
 -- The almighty midterm score of the SICP'25 students
 CREATE TABLE midterm_almighty AS
